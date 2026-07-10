@@ -1,3 +1,5 @@
+`include "PriorityEncoder_h.v"
+
 // ==============Приоритетный шифратор============================
 // PARAMETERS:  WIDTH       - ширина входного вектора
 // IN:          vector      - данные длины WIDTH
@@ -6,15 +8,20 @@
 //              parity      - признак нечетного кол-ва 1 в vector
 // ===============================================================
 module encoder #(
-    parameter WIDTH = 32,
-    parameter POS_W = $clog2(WIDTH)
+    parameter WIDTH = `WIDTH,
+    parameter POS_W = $clog2(`WIDTH)
 )(
     input  [WIDTH-1:0] vector,
     output [POS_W-1:0] position,
     output is_onehot,
     output parity
-
 );
+    // xor - операция контроля чётности
+    assign parity = ^vector;
+
+    // у вектора одна единица, если она уже изолирована
+    assign is_onehot = (|vector & ~|((vector - 1) & vector));
+
     // Изолирование самого старшего бита в векторе
     // Пример для WIDTH = 8, Vec = 00101001
     // IsolatedTopBit = 00100000
@@ -24,14 +31,8 @@ module encoder #(
 
         for (genvar i = 0; i < WIDTH - 1; i = i+1) begin: IsolationLoop
             assign IsolatedTopBit[i] = vector[i] & ~(|(vector[WIDTH - 1: i + 1]));
-        end        
+        end
     endgenerate
-
-    // xor - операция контроля чётности
-    assign parity = ^vector;
-
-    // у вектора одна единица, если она уже изолирована
-    assign is_onehot = (IsolatedTopBit == vector);
 
     // получение позиции активного бита в векторе
     // генерация маски i бита побитовой декомпозиции всех чисел от 0 до WIDTH
